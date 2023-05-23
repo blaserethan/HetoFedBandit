@@ -20,8 +20,9 @@ from operator import truediv
 from dataset_utils.LastFM_util_functions_2 import readFeatureVectorFile, parseLine
 from lib.SyncLinUCB import SyncLinUCB
 from lib.FCLUB.LDP_FCLUB_DC import FCLUB_DC_Global_server
-from lib.FederatedOneModelNew import HetoFedBandit_Simplified, HetoFedBandit_Data_Recluster
 from lib.DyClu import DyClu
+from lib.HetoFedBandit import HetoFedBandit_Simplified
+from lib.HetoFedBandit_Enhanced import HetoFedBandit_Enhanced
 
 class Article():
     def __init__(self, aid, FV=None):
@@ -286,15 +287,14 @@ if __name__ == '__main__':
         
         algorithms['FCLUB_DC'] = FCLUB_DC_Global_server(L=config["n_users"], n=config["n_users"], userList= [1]*config["n_users"], d=config["context_dimension"], T=config["testing_iterations"])
 
-        algorithms['HetoFedBandit_Simplified'] = HetoFedBandit_Simplified(dimension=config["context_dimension"], alpha=0.2, lambda_=config["lambda_"],
+        algorithms['HetoFedBandit'] = HetoFedBandit_Simplified(dimension=config["context_dimension"], alpha=0.2, lambda_=config["lambda_"],
                                                 delta_=1e-1,
                                                 NoiseScale=0.1, threshold=config['D2'], exploration_length= 5000, neighbor_identification_alpha =0.01)
         
-        algorithms['HetoFedBandit_Enhanced'] = HetoFedBandit_Data_Recluster(dimension=config["context_dimension"], alpha=0.2, lambda_=config["lambda_"],
+        algorithms['HetoFedBandit_Enhanced'] = HetoFedBandit_Enhanced(dimension=config["context_dimension"], alpha=0.2, lambda_=config["lambda_"],
                                                 delta_=1e-1,
                                                 NoiseScale=0.1, threshold=config['D3']/5, exploration_length= 1000, neighbor_identification_alpha =0.01,T=config['testing_iterations'])
     
-
         algorithms['DyClu'] = DyClu(dimension=config["context_dimension"], alpha=config["alpha"],
                                 lambda_=config["lambda_"],
                                 NoiseScale=0.1, tau_e=config["tau"],

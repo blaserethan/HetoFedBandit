@@ -14,10 +14,14 @@ from Users.ClusteredUsers import UserManager
 import os
 # os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
-from lib.FederatedOneModelNew import HetoFedBandit_Simplified, HetoFedBandit_PQ,  HetoFedBandit_Data_Recluster
+
 from lib.FCLUB.LDP_FCLUB_DC import FCLUB_DC_Global_server
 from lib.DyClu import DyClu
 from lib.SyncLinUCB import SyncLinUCB
+from lib.HetoFedBandit import HetoFedBandit_Simplified
+from lib.HetoFedBandit_PQ import HetoFedBandit_PQ
+from lib.HetoFedBandit_Data_Recluster import HetoFedBandit_Data_Recluster
+from lib.HetoFedBandit_Enhanced import HetoFedBandit_Enhanced
 
 # other useful imports 
 
@@ -144,11 +148,15 @@ class simulateOnlineData(object):
 
                 #HetoFedBanditSimplified and HetoFedBandit_PQ both cluster only once
                 algorithms['HetoFedBandit_Simplified'].explore_phase = False
-                # algorithms['HetoFedBandit_PQ'].explore_phase = False
+                algorithms['HetoFedBandit_PQ'].explore_phase = False
                 # algorithms['HetoFedBandit_Data_Dependent_Recluster_PQ'].explore_phase = False
                 algorithms['HetoFedBandit_Simplified'].cluster_users()
-                # algorithms['HetoFedBandit_PQ'].cluster_users()
-                # algorithms['HetoFedBandit_Data_Dependent_Recluster_PQ'].cluster_users()
+                algorithms['HetoFedBandit_PQ'].cluster_users()
+
+                # print('Simplified Clusters')
+                # print(algorithms['HetoFedBandit_Simplified'].clusters)
+                # print('PQ Clusters')
+                # print(algorithms['HetoFedBandit_PQ'].clusters)
 
                 #import pdb; pdb.set_trace()
             for u in self.users:
@@ -171,7 +179,7 @@ class simulateOnlineData(object):
                     if alg_name=='FCLUB_DC':
                         if alg.time_to_next_phase == 1:
                             alg.detection(alg.global_time)
-                            print('FCLUB DETECTING')
+                            
 
                     regret = OptimalReward - reward  # pseudo regret, since noise is canceled out
                     AlgRegret[alg_name].append(regret)
@@ -188,11 +196,10 @@ class simulateOnlineData(object):
             # collaborate in clusters if there is something in the queue and we aren't doing exploration after all users play
             if (not algorithms['HetoFedBandit_Simplified'].explore_phase):
                 algorithms['HetoFedBandit_Simplified'].share_stats_between_cluster()
-                # algorithms['HetoFedBandit_PQ'].share_stats_between_cluster()
-                # algorithms['HetoFedBandit_Recluster_PQ'].share_stats_between_cluster()
-                # algorithms['HetoFedBandit_Recluster_FIFO'].share_stats_between_cluster()
-            algorithms['HetoFedBandit_Enhanced'].share_stats_between_cluster()
+                algorithms['HetoFedBandit_PQ'].share_stats_between_cluster()
 
+            algorithms['HetoFedBandit_Data_Recluster'].share_stats_between_cluster()
+            algorithms['HetoFedBandit_Enhanced'].share_stats_between_cluster()
 
             # Log statistics
             if iter_%self.batchSize == 0:
@@ -267,7 +274,7 @@ if __name__ == '__main__':
     if args.T:
         config["testing_iterations"] = int(args.T)
     else:
-        config["testing_iterations"] = 2500
+        config["testing_iterations"] = 3000
     if args.n:
         config["n_users"] = int(args.n)
     else:
@@ -279,7 +286,7 @@ if __name__ == '__main__':
     if args.m:
         config["n_clusters"] = int(args.m)
     else:
-        config["n_clusters"] = 5
+        config["n_clusters"] = 13
     if args.user_dist:
         config["user_dist"] = args.user_dist
     else:
@@ -314,7 +321,7 @@ if __name__ == '__main__':
     if config["user_dist"] == "homo":
         users = UM.simulateThetaForHomoUsers()
     else:
-        users, clusters, user_cluster_indx = UM.simulateThetaForLooselyClusteredUsers()
+        users, clusters, user_cluster_indx = UM.simulateThetaForLopsidedUsers()
     AM = ArticleManager(config["context_dimension"], n_articles=config["n_articles"], FeatureFunc=gaussianFeature, argv={'l2_limit': 1}, ArticleGroups=0)
     articles = AM.simulateArticlePool()
 
@@ -344,32 +351,19 @@ if __name__ == '__main__':
 
 
     D2 = (config["testing_iterations"]) / (config["n_users"] * config["context_dimension"]* np.log(config["testing_iterations"]))
-    D3 = (config["testing_iterations"]) / (config["n_users"] /config["n_clusters"] * config["context_dimension"]* np.log(config["testing_iterations"]))
-    algorithms['DisLinUCB'] = SyncLinUCB(dimension=config["context_dimension"], alpha=-1, lambda_=config["lambda_"],
-                                                   delta_=config["delta"],
-                                                   NoiseScale=config["NoiseScale"], threshold=D2)
+    D3 = (config["testing_iterations"]) / (config["n_users"] /2 * config["context_dimension"]* np.log(config["testing_iterations"]))
+
+    # # BASELINES
+    # algorithms['DisLinUCB'] = SyncLinUCB(dimension=config["context_dimension"], alpha=-1, lambda_=config["lambda_"],
+    #                                                delta_=config["delta"],
+    #                                                NoiseScale=config["NoiseScale"], threshold=D2)
     
-    algorithms['NIndepLinUCB'] = SyncLinUCB(dimension=config["context_dimension"], alpha=-1, lambda_=config["lambda_"],
-                                                   delta_=config["delta"],
-                                                   NoiseScale=config["NoiseScale"], threshold=np.Inf)
-    algorithms['HetoFedBandit_Simplified'] = HetoFedBandit_Simplified(dimension=config["context_dimension"], alpha=-1, lambda_=config["lambda_"],
-                                                delta_=config["delta"],
-                                                NoiseScale=config["NoiseScale"], threshold=D2, exploration_length= config["explore_len"], neighbor_identification_alpha =0.01)
-    # to accurately compare FCLUB to our model, we assume each local server has only 1 client
-    algorithms['FCLUB_DC'] = FCLUB_DC_Global_server(L=config["n_users"], n=config["n_users"], userList= [1]*config["n_users"], d=config["context_dimension"], T=config["testing_iterations"]*config["n_users"])
-    # algorithms['HetoFedBandit_PQ'] = HetoFedBandit_PQ(dimension=config["context_dimension"], alpha=-1, lambda_=config["lambda_"],
-    #                                             delta_=config["delta"],
-    #                                             NoiseScale=config["NoiseScale"], threshold=D3, exploration_length= 50, neighbor_identification_alpha =0.01)
-    # algorithms['HetoFedBandit_Recluster_PQ'] = HetoFedBandit_Recluster_PQ(dimension=config["context_dimension"], alpha=-1, lambda_=config["lambda_"],
-    #                                             delta_=config["delta"],
-    #                                             NoiseScale=config["NoiseScale"], threshold=D3, exploration_length= 50, neighbor_identification_alpha =0.01)
-    # algorithms['HetoFedBandit_Recluster_FIFO'] = HetoFedBandit_Recluster_FIFO(dimension=config["context_dimension"], alpha=-1, lambda_=config["lambda_"],
-    #                                         delta_=config["delta"],
-    #                                         NoiseScale=config["NoiseScale"], threshold=D3, exploration_length= 50, neighbor_identification_alpha =0.01)
-    
-    algorithms['HetoFedBandit_Enhanced'] = HetoFedBandit_Data_Recluster(dimension=config["context_dimension"], alpha=-1, lambda_=config["lambda_"],
-                                            delta_=config["delta"],
-                                            NoiseScale=config["NoiseScale"], threshold=D3, exploration_length= 50, neighbor_identification_alpha =0.01,T=config['testing_iterations'])
+    # algorithms['NIndepLinUCB'] = SyncLinUCB(dimension=config["context_dimension"], alpha=0.4, lambda_=config["lambda_"],
+    #                                                delta_=config["delta"],
+    #                                                NoiseScale=config["NoiseScale"], threshold=np.Inf)
+    #     # to accurately compare FCLUB to our model, we assume each local server has only 1 client
+    # algorithms['FCLUB_DC'] = FCLUB_DC_Global_server(L=config["n_users"], n=config["n_users"], userList= [1]*config["n_users"], d=config["context_dimension"], T=config["testing_iterations"]*config["n_users"])
+
     # algorithms['DyClu'] = DyClu(dimension=config["context_dimension"], alpha=-1,
     #                             lambda_=config["lambda_"],
     #                             NoiseScale=config["NoiseScale"], tau_e=config["tau"],
@@ -378,6 +372,23 @@ if __name__ == '__main__':
     #                             dataSharing=False,
     #                             aggregationMethod="combine", useOutdated=True,
     #                             maxNumOutdatedModels=None)
+
+    # HETOFEDBANDIT
+    algorithms['HetoFedBandit_Simplified'] = HetoFedBandit_Simplified(dimension=config["context_dimension"], alpha=-1, lambda_=config["lambda_"],
+                                                delta_=config["delta"],
+                                                NoiseScale=config["NoiseScale"], threshold=D3, exploration_length= config["explore_len"], neighbor_identification_alpha =0.01)
+
+    algorithms['HetoFedBandit_PQ'] = HetoFedBandit_PQ(dimension=config["context_dimension"], alpha=-1, lambda_=config["lambda_"],
+                                                delta_=config["delta"],
+                                                NoiseScale=config["NoiseScale"], threshold=D3, exploration_length= config["explore_len"], neighbor_identification_alpha =0.01)
+    
+    algorithms['HetoFedBandit_Data_Recluster'] = HetoFedBandit_Data_Recluster(dimension=config["context_dimension"], alpha=-1, lambda_=config["lambda_"],
+                                            delta_=config["delta"],
+                                            NoiseScale=config["NoiseScale"], threshold=D3/3, exploration_length= 50, neighbor_identification_alpha =0.01, T=config['testing_iterations'])
+    
+    algorithms['HetoFedBandit_Enhanced'] = HetoFedBandit_Enhanced(dimension=config["context_dimension"], alpha=-1, lambda_=config["lambda_"],
+                                        delta_=config["delta"],
+                                        NoiseScale=config["NoiseScale"], threshold=D3/3, exploration_length= 50, neighbor_identification_alpha =0.01, T=config['testing_iterations'])
 
     ## Run Simulation ##
     print("Starting for ", simExperiment.simulation_signature)

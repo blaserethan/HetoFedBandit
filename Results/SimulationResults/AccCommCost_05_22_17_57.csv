@@ -1,0 +1,5 @@
+Time(Iteration),DisLinUCB,NIndepLinUCB,HetoFedBandit_Simplified,FCLUB_DC
+0,2550,0,0,1
+50,3850,0,0,1475
+100,4350,0,532,3039
+150,4650,0,1188,4030

@@ -1,0 +1,2 @@
+Time(Iteration),DisLinUCBTheta,NIndepLinUCBTheta,HetoFedBandit_SimplifiedTheta,HetoFedBandit_PQTheta,HetoFedBandit_Data_ReclusterTheta,HetoFedBandit_EnhancedTheta
+0,49.00427560423254,49.146120226082836,49.1698238177536,49.29253045598125,49.00427560423254,49.00427560423254
