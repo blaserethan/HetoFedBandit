@@ -20,7 +20,7 @@ from operator import truediv
 from dataset_utils.LastFM_util_functions_2 import readFeatureVectorFile, parseLine
 from lib.SyncLinUCB import SyncLinUCB
 from lib.FCLUB.LDP_FCLUB_DC import FCLUB_DC_Global_server
-from lib.FederatedOneModelNew import HetoFedBandit_Simplified, HetoFedBandit_Data_Recluster
+from lib.FederatedOneModelNew import HetoFedBandit_Simplified, HetoFedBandit_Enhanced
 from lib.DyClu import DyClu
 
 class Article():
@@ -290,7 +290,7 @@ if __name__ == '__main__':
                                                 delta_=1e-1,
                                                 NoiseScale=0.1, threshold=config['D2'], exploration_length= 5000, neighbor_identification_alpha =0.01)
         
-        algorithms['HetoFedBandit_Enhanced'] = HetoFedBandit_Data_Recluster(dimension=config["context_dimension"], alpha=0.2, lambda_=config["lambda_"],
+        algorithms['HetoFedBandit_Enhanced'] = HetoFedBandit_Enhanced(dimension=config["context_dimension"], alpha=0.2, lambda_=config["lambda_"],
                                                 delta_=1e-1,
                                                 NoiseScale=0.1, threshold=config['D3']/5, exploration_length= 1000, neighbor_identification_alpha =0.01,T=config['testing_iterations'])
     

@@ -276,92 +276,8 @@ class HetoFedBandit_Simplified:
         else:
             return
         
-
-class HetoFedBandit_PQ(HetoFedBandit_Simplified):
-    def __init__(self, dimension, alpha, lambda_, delta_, NoiseScale, threshold, exploration_length, neighbor_identification_alpha):
-        super().__init__(dimension, alpha, lambda_, delta_, NoiseScale, threshold, exploration_length, neighbor_identification_alpha)      
-
-    
-    def compute_cluster_det_ratio(self, cluster_idx):
-        collab_A = np.zeros((self.dimension, self.dimension)) 
-        for client_id in self.clusters[cluster_idx]:
-            collab_A += self.server_copies[client_id].A_clean
         
-        numerator = np.linalg.det(collab_A+self.lambda_ * np.identity(n=self.dimension))
-        sum = 0
-        for client_id in self.clusters[cluster_idx]:
-            denominator = np.linalg.det(self.server_copies[client_id].A_local+self.lambda_ * np.identity(n=self.dimension))
-            sum += np.log(numerator/denominator) * self.server_copies[client_id].numObs_not_yet_shared
-        return sum
-        
-
-    # override the share_stats_between_cluster to use a PQ
-    def share_stats_between_cluster(self):
-        # check if any clusters are waiting to collaborate
-        if (len(self.collab_queue) > 0):
-
-            # find the cluster with largest benefit using the determinant ratio
-            cluster_to_collab_idx = 0
-            max_det_ratio = 0
-            for cluster_idx in self.collab_queue:
-                cluster_det_ratio = self.compute_cluster_det_ratio(cluster_idx)
-                if (cluster_det_ratio >= max_det_ratio):
-                    cluster_to_collab_idx = cluster_idx
-                    max_det_ratio = cluster_det_ratio
-
-            # remove it from the queue
-            self.collab_queue.remove(cluster_to_collab_idx)
-
-            # server gets statistics from everyone in the selected cluster
-            for client_id in self.clusters[cluster_to_collab_idx]:
-
-                self.totalCommCost+=1
-                self.server_copies[client_id].A_clean = copy.deepcopy(self.clients[client_id].A_local_clean)
-                self.server_copies[client_id].b_clean = copy.deepcopy(self.clients[client_id].b_local_clean)
-                self.server_copies[client_id].numObs_clean = copy.deepcopy(self.clients[client_id].numObs_clean)
-
-                self.server_copies[client_id].A_local =  copy.deepcopy(self.clients[client_id].A_local)
-                self.server_copies[client_id].b_local = copy.deepcopy(self.clients[client_id].b_local)
-                self.server_copies[client_id].numObs_local = copy.deepcopy(self.clients[client_id].numObs_local)
-
-                # clear client's upload buffer
-                self.clients[client_id].A_uploadbuffer = np.zeros((self.dimension, self.dimension))
-                self.clients[client_id].b_uploadbuffer = np.zeros(self.dimension)
-                self.clients[client_id].numObs_uploadbuffer = 0
-
-            A_aggregated = np.zeros((self.dimension, self.dimension))
-            b_aggregated = np.zeros(self.dimension)
-            numObs_aggregated = 0
-
-            for client_id in self.clusters[cluster_to_collab_idx]:
-                self.totalCommCost += 1
-                # self.totalCommCost += (self.dimension**2 + self.dimension)
-                # update server's aggregated ss
-                A_aggregated += self.clients[client_id].A_local_clean
-                b_aggregated += self.clients[client_id].b_local_clean
-                numObs_aggregated += self.clients[client_id].numObs_clean
-
-                # clear client's upload buffer
-                self.clients[client_id].A_uploadbuffer = np.zeros((self.dimension, self.dimension))
-                self.clients[client_id].b_uploadbuffer = np.zeros(self.dimension)
-                self.clients[client_id].numObs_uploadbuffer = 0
-
-            # then send the aggregated ss to all the clients, now all of them are synced
-            for client_id in self.clusters[cluster_to_collab_idx]:
-                self.totalCommCost += 1
-                # self.totalCommCost += (self.dimension**2 + self.dimension)
-                self.clients[client_id].A_local = copy.deepcopy(A_aggregated)
-                self.clients[client_id].b_local = copy.deepcopy(b_aggregated)
-                self.clients[client_id].numObs_local = copy.deepcopy(numObs_aggregated)
-
-                #print(self.clients[client_id].numObs_local)
-            
-            return
-
-        else:
-            return
-        
-class HetoFedBandit_Data_Recluster(HetoFedBandit_Simplified):
+class HetoFedBandit_Enhanced(HetoFedBandit_Simplified):
     def __init__(self, dimension, alpha, lambda_, delta_, NoiseScale, threshold, exploration_length, neighbor_identification_alpha,T):
         super().__init__(dimension, alpha, lambda_, delta_, NoiseScale, threshold, exploration_length, neighbor_identification_alpha)
         self.explore_phase = False
@@ -371,7 +287,7 @@ class HetoFedBandit_Data_Recluster(HetoFedBandit_Simplified):
         # update local ss, and upload buffer
         self.clients[currentClientID].localUpdate(articlePicked.featureVector, click)
         
-        if self.clients[currentClientID].syncRoundTriggered(self.threshold) and not self.explore_phase:
+        if self.clients[currentClientID].syncRoundTriggered(self.threshold):
 
             # every time we have a communication round, re-cluster and also clear the queue
             self.cluster_users()
@@ -421,8 +337,6 @@ class HetoFedBandit_Data_Recluster(HetoFedBandit_Simplified):
                 self.clients[client_id].A_local = copy.deepcopy(A_aggregated)
                 self.clients[client_id].b_local = copy.deepcopy(b_aggregated)
                 self.clients[client_id].numObs_local = copy.deepcopy(numObs_aggregated)
-
-            
             return
 
         else:
@@ -481,7 +395,7 @@ class HetoFedBandit_Data_Recluster(HetoFedBandit_Simplified):
 
             if (lr == True and rl == True):
                 self.collab_graph.add_edge(client_pair[0],client_pair[1])
-        print('*************** HETOFEDBANDIT-CLUSTERING ************')
+        print('*************** Enhanced-CLUSTERING ************')
         print(self.collab_graph)
 
         # compute the clusters from the user graph

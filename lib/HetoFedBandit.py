@@ -5,6 +5,26 @@ from heapq import heappop, heappush, heapify
 from scipy.stats import chi2, ncx2
 from itertools import combinations
 
+class ServerCopyClient:
+    def __init__(self, featureDimension, lambda_, delta_, NoiseScale, client_id):
+        self.d = featureDimension
+        self.lambda_ = lambda_
+        self.delta_ = delta_
+        self.NoiseScale = NoiseScale
+        self.client_id = client_id #
+
+        # Sufficient statistics stored on the client #
+        # latest local sufficient statistics
+        self.A_clean = np.zeros((self.d, self.d))  #lambda_ * np.identity(n=self.d)
+        self.b_clean = np.zeros(self.d)
+        self.numObs_clean = 0
+
+        self.numObs_not_yet_shared = 0 #number of new observations from client that have not been shared with its collaborators yet
+
+        self.A_local = np.zeros((self.d, self.d))
+        self.b_local = np.zeros(self.d)
+        self.numObs_combined = 0
+
 class LocalClient:
     def __init__(self, featureDimension, lambda_, delta_, NoiseScale):
         self.d = featureDimension
@@ -115,6 +135,7 @@ class HetoFedBandit_Simplified:
         if clientID not in self.clients:
             self.clients[clientID] = LocalClient(self.dimension, self.lambda_, self.delta_, self.NoiseScale)
             # initialize the server's copy
+            self.server_copies[clientID] = ServerCopyClient(self.dimension, self.lambda_, self.delta_, self.NoiseScale, clientID)
 
         maxPTA = float('-inf')
         articlePicked = None
@@ -196,6 +217,11 @@ class HetoFedBandit_Simplified:
 
         # compute the clusters from the user graph
         self.clusters = list(nx.find_cliques(self.collab_graph))
+        print('*************************')
+        print('HFB Clustering')
+        print(self.collab_graph)
+        print(len(self.clusters))
+        print('***********************')
 
         for client_id, client_model in self.clients.items():
             client_model.cluster_indices = [i for i in range(len(self.clusters)) if client_id in self.clusters[i]]

@@ -1,5 +1,0 @@
-Time(Iteration),DisLinUCB,NIndepLinUCB,HetoFedBandit_Simplified,FCLUB_DC,HetoFedBandit_PQ
-0,2550,0,0,1,0
-50,11150,0,0,1458,0
-100,12150,0,476,3003,568
-150,12850,0,906,3983,952
