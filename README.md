@@ -1,4 +1,3 @@
-# Code HetoFedBandit
 # Code for "Federated Linear Contextual Bandits with Heterogeneous Clients"
 
 This repository contains implementation of the proposed algorithms HetoFedBandit and HetoFedBandit-Enhanced, and baseline algorithms for comparison:
