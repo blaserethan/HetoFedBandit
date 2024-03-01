@@ -18,7 +18,7 @@ To experiment with different environment settings, specify parameters:
 
 Detailed description of how the simulation environment works can be found in Section 4 of the paper.
 
-Experiment results can be found in "./Results/SimulationResults/" folder, which contains:
+Experiment results for the simulated environment can be found in the "./Results/SimulationResults/" folder, which contains:
 - "[namelabel]\_[startTime].png": plot of accumulated regret over iteration for each algorithm
 - "[namelabel]\_AccRegret\_[startTime].csv": regret at each iteration for each algorithm
 - "[namelabel]\_ParameterEstimation\_[startTime].csv": l2 norm between estimated and ground-truth parameter at each iteration for each algorithm
@@ -28,4 +28,5 @@ For experiments on the already pre-processed LastFM dataset,  directly run:
 ```console
 python Simulation_Realworld.py --dataset LastFM
 ```
-If you want to preprocess the dataset from LastFM yourself, with different random shuffling of the events, you can utilize "Dataset/getProcessedEvents.py" to re-process the dataset using the procedure described in Section 4.3 of the paper.
+If you want to preprocess the dataset from LastFM yourself, with different random shuffling of the events, you can utilize [Dataset/getProcessedEvents.py](Dataset/getProcessedEvents.py) to re-process the dataset using the procedure described in Section 4.3 of the paper.
+The original dasetet can be downloaded at [LastFM-2011 Dataset](https://grouplens.org/datasets/hetrec-2011/).
