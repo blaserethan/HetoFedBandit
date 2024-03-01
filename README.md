@@ -24,7 +24,8 @@ Experiment results can be found in "./Results/SimulationResults/" folder, which 
 - "[namelabel]\_ParameterEstimation\_[startTime].csv": l2 norm between estimated and ground-truth parameter at each iteration for each algorithm
 - "Config\_[startTime].json": stores hyper parameters of all algorithms for this experiment
 
-For experiments on LastFM dataset,  directly run:
+For experiments on the already pre-processed LastFM dataset,  directly run:
 ```console
 python Simulation_Realworld.py --dataset LastFM
 ```
+If you want to preprocess the dataset from LastFM yourself, with different random shuffling of the events, you can utilize "Dataset/getProcessedEvents.py" to re-process the dataset using the procedure described in Section 4.3 of the paper.
