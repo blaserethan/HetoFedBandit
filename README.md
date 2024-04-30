@@ -8,7 +8,7 @@ This repository contains implementation of the proposed algorithms HetoFedBandit
 
 For experiments on the synthetic dataset, directly run:
 ```console
-python Simulation.py --T 2500 --n 30 --m 5 --sigma 0.09
+python Simulation.py --T 2500 --n 30 --m 5
 ```
 To experiment with different environment settings, specify parameters:
 - T: number of iterations to run
